@@ -1,130 +1,66 @@
 import RPi.GPIO as GPIO
-import random
+import threading
 import time
 
 red_pin = 23
 green_pin = 24
 blue_pin = 25
 
-pins = [{'pin_num': red_pin, 'color': 'red'},
-        {'pin_num': green_pin, 'color': 'green'},
-        {'pin_num': blue_pin, 'color': 'blue'}]
-
-GPIO.setmode(GPIO.BCM)  # use GPIO numbering, not generic
+GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
+GPIO.setup(red_pin, GPIO.OUT, initial=GPIO.LOW)
+GPIO.setup(green_pin, GPIO.OUT, initial=GPIO.LOW)
+GPIO.setup(blue_pin, GPIO.OUT, initial=GPIO.LOW)
 
-for pin in pins:
-    GPIO.setup(pin['pin_num'], GPIO.OUT, initial=GPIO.LOW)
+r = GPIO.PWM(red_pin, 50)
+g = GPIO.PWM(green_pin, 50)
+b = GPIO.PWM(blue_pin, 50)
 
-def change_bright(pin_num: int):
-    p = GPIO.PWM(pin_num, 50) 
-    p.start(0)
-    while 1:
-        for dc in range(0, 101, 5):
-            p.ChangeDutyCycle(dc)
-            time.sleep(0.05)
-        for dc in range(100, -1, -5):
-            p.ChangeDutyCycle(dc)
-            time.sleep(0.05)
+cv = threading.Condition()
 
-def set_bright(pin_num: int, dutyCycle: int):
-    p = GPIO.PWM(pin_num, 50) 
-    p.ChangeDutyCycle(dutyCycle)
+def set_bright(pin, dutyCycle):
+    pin.start(0)
+    pin.ChangeDutyCycle(dutyCycle)
 
 def set_orange():
-    r = GPIO.PWM(red_pin, 50) 
-    r.start(0)
-    g = GPIO.PWM(green_pin, 50) 
-    g.start(0)
-    b = GPIO.PWM(blue_pin, 50) 
-    b.start(0)
-    r.ChangeDutyCycle(100)
-    g.ChangeDutyCycle(65)
-    b.ChangeDutyCycle(0)
-    while 1:
-        time.sleep(0.05)
+    with cv:
+        cv.notify_all()
+        set_bright(r,100)
+        set_bright(g,65)
+        set_bright(b,0) 
+        cv.wait()
+        print('set_orange notified')
 
-def toggle_color(color: str, state: str):
-    for pin in pins:
-        if pin['color'] == color:
-            if state == 'on':
-                GPIO.output(pin['pin_num'], GPIO.HIGH)
-            elif state == 'off':
-                GPIO.output(pin['pin_num'], GPIO.LOW)
+def set_blue():
+    time.sleep(5)
+    with cv:
+        cv.notify_all()
+        set_bright(r,0)
+        set_bright(g,0)
+        set_bright(b,100)
+        cv.wait()
+        print('set_blue notified')
 
-
-def color_on(color: str):
-    toggle_color(color, 'on')
-
-
-def color_off(color: str):
-    toggle_color(color, 'off')
-
-
-def all_on():
-    for pin in pins:
-        GPIO.output(pin['pin_num'], GPIO.HIGH)
-
-
-def all_off():
-    for pin in pins:
-        GPIO.output(pin['pin_num'], GPIO.LOW)
-
+def off_lights():
+    time.sleep(10)
+    print('attempting to off the lights')
+    with cv:
+        cv.notify_all()
+        r.stop()
+        g.stop()
+        b.stop()
 
 def pin_on(pin_num: int):
     GPIO.output(pin_num, GPIO.HIGH)
 
-
 def pin_off(pin_num: int):
     GPIO.output(pin_num, GPIO.LOW)
 
+#def start():
+orange_thread = threading.Thread(target=set_orange)
+blue_thread = threading.Thread(target=set_blue)
+off_thread = threading.Thread(target=off_lights)
 
-def strobe_reg(period=0.5):
-    while True:
-        all_on()
-        time.sleep(period)
-        all_off()
-        time.sleep(period)
-
-
-def strobe_rand(min_time=0, max_time=1.2):
-    while True:
-        all_on()
-        time.sleep(random.uniform(min_time, max_time))
-        all_off()
-        time.sleep(random.uniform(min_time, max_time))
-
-
-def wave_reg(period=0.1):
-    while True:
-        for pin in pins:
-            GPIO.output(pin['pin_num'], GPIO.HIGH)
-            time.sleep(period)
-
-        for pin in reversed(pins):
-            GPIO.output(pin['pin_num'], GPIO.LOW)
-            time.sleep(period)
-
-
-def wave_rand(min_time=0, max_time=0.4):
-    while True:
-        period = random.uniform(min_time, max_time)
-        for pin in pins:
-            GPIO.output(pin['pin_num'], GPIO.HIGH)
-            time.sleep(period)
-
-        period = random.uniform(min_time, max_time)
-        for pin in reversed(pins):
-            GPIO.output(pin['pin_num'], GPIO.LOW)
-            time.sleep(period)
-
-
-def wave_rand_ex(min_time=0, max_time=0.4):
-    while True:
-        for pin in pins:
-            GPIO.output(pin['pin_num'], GPIO.HIGH)
-            time.sleep(random.uniform(min_time, max_time))
-
-        for pin in reversed(pins):
-            GPIO.output(pin['pin_num'], GPIO.LOW)
-            time.sleep(random.uniform(min_time, max_time))
+orange_thread.start()
+blue_thread.start()
+off_thread.start()
