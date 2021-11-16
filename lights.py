@@ -31,6 +31,15 @@ def set_orange():
         cv.wait()
         print('set_orange notified')
 
+def set_color_waiting(r_color: int, g_color: int, b_color: int):
+    with cv:
+        cv.notify_all()
+        set_bright(r, r_color)
+        set_bright(g, g_color)
+        set_bright(b, b_color) 
+        cv.wait()
+        print('set_color r:'+str(r_color)+', g:'+str(g_color)+', b:'+str(b_color)+' notified')
+
 def set_blue():
     time.sleep(5)
     with cv:
@@ -56,11 +65,56 @@ def pin_on(pin_num: int):
 def pin_off(pin_num: int):
     GPIO.output(pin_num, GPIO.LOW)
 
-#def start():
-orange_thread = threading.Thread(target=set_orange)
-blue_thread = threading.Thread(target=set_blue)
-off_thread = threading.Thread(target=off_lights)
+def set_color(r_color: int, g_color: int, b_color: int):
+    set_bright(r, r_color)
+    set_bright(g, g_color)
+    set_bright(b, b_color) 
+    print('set_color r:'+str(r_color)+', g:'+str(g_color)+', b:'+str(b_color)+' notified')
 
-orange_thread.start()
-blue_thread.start()
-off_thread.start()
+def switch_color_every_1_sec():
+    rcolor = 100
+    gcolor = 0
+    bcolor = 0
+
+    for x in range(0, 101, 25):
+        gcolor = x
+        set_color(rcolor,gcolor,bcolor)
+        time.sleep(1)
+    
+    for x in range(75, -1, -25):
+        rcolor = x
+        set_color(rcolor,gcolor,bcolor)
+        time.sleep(1)
+    
+    for x in range(25, 101, 25):
+        bcolor = x
+        set_color(rcolor,gcolor,bcolor)
+        time.sleep(1)
+    
+    for x in range(75, -1, -25):
+        gcolor = x
+        set_color(rcolor,gcolor,bcolor)
+        time.sleep(1)
+        
+    for x in range(25, 101, 25):
+        rcolor = x
+        set_color(rcolor,gcolor,bcolor)
+        time.sleep(1)
+    
+    for x in range(75, -1, -25):
+        bcolor = x
+        set_color(rcolor,gcolor,bcolor)
+        time.sleep(1)
+
+    r.stop()
+    g.stop()
+    b.stop()
+
+def start():
+    orange_thread = threading.Thread(target=set_orange)
+    blue_thread = threading.Thread(target=set_blue)
+    off_thread = threading.Thread(target=off_lights)
+
+    orange_thread.start()
+    blue_thread.start()
+    off_thread.start()
