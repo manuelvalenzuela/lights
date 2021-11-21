@@ -12,9 +12,9 @@ GPIO.setup(red_pin, GPIO.OUT, initial=GPIO.LOW)
 GPIO.setup(green_pin, GPIO.OUT, initial=GPIO.LOW)
 GPIO.setup(blue_pin, GPIO.OUT, initial=GPIO.LOW)
 
-r = GPIO.PWM(red_pin, 50)
-g = GPIO.PWM(green_pin, 50)
-b = GPIO.PWM(blue_pin, 50)
+r = GPIO.PWM(red_pin, 1000)
+g = GPIO.PWM(green_pin, 1000)
+b = GPIO.PWM(blue_pin, 1000)
 
 cv = threading.Condition()
 
